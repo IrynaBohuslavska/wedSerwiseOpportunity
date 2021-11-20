@@ -1,0 +1,86 @@
+@isTest
+private class webSerwiseOpportunityTest {
+    
+    static Opportunity createTestRecord() {
+        Opportunity opportynityTest = new Opportunity(
+            Name='Testooo',
+            CloseDate=Date.valueOf('2018-08-01'),
+            OrderNumber__c='145',
+            StageName='New',
+            Probability=10,
+            Amount= 2000);
+        return opportynityTest;
+    }  
+    
+    @isTest static void testGetOpportunityById (){
+        Opportunity opportynityTest = createTestRecord();
+        insert opportynityTest;
+        Id recordId = opportynityTest.Id;
+        RestRequest request = new RestRequest();
+        request.requestUri =
+            'https://cunning-moose-dev-ed.my.salesforce.com/services/apexrest/Opportunity/'
+            + recordId;
+        request.httpMethod = 'GET';
+        RestContext.request = request;
+        
+        Opportunity opportynityThis = wedSerwiseOpportunity.getOpportunityById();
+        
+        System.assert(opportynityThis != null);
+        System.assertEquals('Testooo', opportynityThis.Name);
+    }
+    
+    @isTest static void testPostOpportunity (){
+        ID thisOpportunityId = wedSerwiseOpportunity.createOpportunity(createTestRecord());
+        System.assert(thisOpportunityId != null);
+        Opportunity thisOpportunity= [SELECT Id,Name FROM Opportunity WHERE Id=:thisOpportunityId LIMIT 1];
+        System.assert(thisOpportunity != null);
+        System.assertEquals(thisOpportunity.Name, 'Testooo');
+    }
+    
+    @isTest static void testDeleteOpportunity (){
+        Opportunity opportynityTest = createTestRecord();
+        insert opportynityTest;
+        Id recordId = opportynityTest.Id;
+        
+        RestRequest request = new RestRequest();
+        request.requestUri =
+            'https://cunning-moose-4hh8aq-dev-ed.my.salesforce.com/services/apexrest/Opportunity/'
+            + recordId;
+        request.httpMethod = 'DELETE';
+        RestContext.request = request;
+        
+        wedSerwiseOpportunity.deleteOpportunity();
+        List<Opportunity> listOpportunity = [SELECT Id FROM Opportunity WHERE Id=:recordId];
+        System.assert(listOpportunity.size() == 0);
+    }
+    
+    @isTest static void testUpsertCase() {
+        ID opportunityFirstId = wedSerwiseOpportunity.upsertOpportunity(new Opportunity(
+            Name='Testooo',
+            CloseDate=Date.valueOf('2018-08-01'),
+            OrderNumber__c='145',
+            StageName='New',
+            Probability=10,
+            Amount= 2000));
+        
+        System.assert(opportunityFirstId != null);
+        
+        Opportunity opportunityFirst = [SELECT Id,Name FROM Opportunity WHERE Id=:opportunityFirstId LIMIT 1];
+        System.assert(opportunityFirst != null);
+        System.assertEquals(opportunityFirst.Name, 'Testooo');
+        
+        
+        ID opportunitySecondId = wedSerwiseOpportunity.upsertOpportunity(new Opportunity(
+            Id = opportunityFirstId,
+            Name='Testooo1',
+            CloseDate=Date.valueOf('2018-08-01'),
+            OrderNumber__c='145',
+            StageName='New',
+            Probability=10,
+            Amount= 2000));
+                                                        System.assertEquals(opportunityFirstId, opportunitySecondId);
+                                                        Opportunity opportunitySecond = [SELECT Id,Name FROM Opportunity WHERE Id=:opportunitySecondId  LIMIT 1];
+                                                        System.assert(opportunitySecond != null);
+                                                        System.assertEquals(opportunitySecond.Name, 'Testooo1');
+                                                        }    
+                                                        }

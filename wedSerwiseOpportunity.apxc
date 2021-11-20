@@ -1,0 +1,67 @@
+@RestResource(urlMapping='/Opportunity/*')
+global class wedSerwiseOpportunity {
+    @HttpGet	
+    global static Opportunity getOpportunityById() {
+        RestRequest request = RestContext.request;
+        String oppId = request.requestURI.substring(request.requestURI.lastIndexOf('/')+1);
+        Opportunity opportunity =  [SELECT 
+                                    Name, 
+                                    Probability, 
+                                    NextStep, 
+                                    OwnerId, 
+                                    StageName
+                                    FROM Opportunity
+                                    WHERE Id = :oppId];
+        return opportunity;
+    }
+    
+    @HttpPost
+    global static ID createOpportunity(Opportunity thisOpportunity) {
+        insert thisOpportunity;
+        return thisOpportunity.Id;
+    } 
+    
+    @HttpDelete
+    global static void deleteOpportunity() {
+        RestRequest request = RestContext.request;
+        String opportunityId = request.requestURI.substring(
+            request.requestURI.lastIndexOf('/')+1);
+        Opportunity opportunity = [SELECT Id FROM Opportunity WHERE Id = :opportunityId LIMIT 1];
+        delete opportunity;
+    }  
+    
+    @HttpPut
+    global static ID upsertOpportunity(Opportunity thisOpportunity) {
+        List<Opportunity> oppCheck = [SELECT Id FROM Opportunity WHERE ID=:thisOpportunity.Id];
+        if(oppCheck.size() == 0){
+            insert thisOpportunity;  
+        }else{
+            update thisOpportunity;
+        }
+        return thisOpportunity.Id;
+    }
+    
+    @HttpPatch
+    global static ID updateOpportunityFields() {
+        RestRequest request = RestContext.request;
+        String opportunityId = request.requestURI.substring(
+            request.requestURI.lastIndexOf('/')+1);
+        
+        Opportunity thisOpportunity = [SELECT Id FROM Opportunity WHERE Id = :opportunityId];
+        Map<String, Object> params = (Map<String, Object>)JSON.deserializeUntyped(request.requestbody.tostring());
+        
+        for(String fieldName : params.keySet()) {
+            if(fieldName == 'CloseDate'){
+                thisOpportunity.put(fieldName, Date.valueOf(params.get(fieldName)));
+            }
+            if(fieldName == 'OrderNumber__c' && fieldName == 'Probability' && fieldName == 'Amount'){
+                thisOpportunity.put(fieldName, Integer.valueOf(params.get(fieldName)));
+            }
+            else{
+               thisOpportunity.put(fieldName, params.get(fieldName)); 
+            }            
+        }
+        update thisOpportunity;
+        return thisOpportunity.Id;
+    } 
+}
